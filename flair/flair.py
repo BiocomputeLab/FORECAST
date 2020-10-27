@@ -99,3 +99,56 @@ def inference(p,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_ex
     print(df.head())
 
 
+def inference(p,Parameters_inference):
+    FLUORESCENCE_MAX=Parameters_inference['FLUORESCENCE_MAX']
+    BINS=Parameters_inference['BINS']
+    Nj=Parameters_inference['Nj']
+    READS=Parameters_inference['READS']
+    Nijhat=Parameters_inference['Nijhat']
+    Nihat=Parameters_inference['Nihat']
+    distribution=Parameters_inference['distribution']
+    Mean_expression_bins=Parameters_inference['Mean_expression_bins']
+    Part_conv=Parameters_inference['Part_conv']
+    Sij=Parameters_inference['Sij']
+    
+    Data_results = Parallel(n_jobs=-1,max_nbytes=None)(delayed(ML_inference_reparameterised)(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_expression_bins,Part_conv,Sij)for i in range(p))
+    Data_results=np.array(Data_results)
+    df= pd.DataFrame(Data_results)
+    df.rename(columns={0: "mu_MLE", 1: "sigma_MLE", 2: "mu_std",3: "sigma_std",4: "mu_MOM", 5: "sigma_MOM", 6: "Inference_grade",7: "Score"}, errors="raise",inplace=True)
+    print(df.head())
+
+
+def get_dictionary_inference(FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_expression_bins,Part_conv,Sij):
+    if FLUORESCENCE_MAX>1:
+        D['FLUORESCENCE_MAX']=FLUORESCENCE_MAX
+    else:
+        print('the fluorescence max should be a positive number')
+    if BINS>1:
+        D['BINS']=int(BINS)
+    else:
+        print('the number of bins should be an integer bigger than 1')
+    if isinstance(Nj, np.ndarray) and len(Nj)=BINS:
+        D['Nj']=Nj
+    else:
+        print('the number of cell sorted per bin should be an array of size 1*BINS ')
+    if isinstance(READS, np.ndarray) and len(READS)=BINS:
+        D['READS']=READS
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
