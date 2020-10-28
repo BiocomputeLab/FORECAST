@@ -14,7 +14,7 @@ from joblib import Parallel, delayed
 
 def Sorting_and_Sequencing(BINS,Diversity,N,BUDGET_READS,Ratio_amplification,BIAS_LIBRARY,distribution,Part_conv,A,B):
     # take as input the number of bins (BINS), the diversity (Diversity) and size of the library sorted (N), the number of reads to allocate in total (BUDGET_READS), the post sorting amplification step (Ratio_amplification),if the library is balanced (BIAS_Library), the underlying protein distribution (gamma or lognormal), the fluorescence bounds for the sorting machine (Part_conv),and the parameters of the said distribution.
-    # Return the (Diversity*Bins) matrix resulting from the sequencing
+    # Return the (Diversity*Bins) matrix resulting from the sequencing and the sorting matrix Nj (number of cell sorted in each bin)
     global Sij
     #### STEP 1 - Draw the ratio p_concentration
     
@@ -64,7 +64,7 @@ def Sorting_and_Sequencing(BINS,Diversity,N,BUDGET_READS,Ratio_amplification,BIA
         else:
             Concentration_vector=np.zeros(Diversity)
         Sij[:,j]=np.random.multinomial(READS[j],Concentration_vector,size=1)
-    print(Sij)
+    return(Sij,Nj)
 
 
 
@@ -106,7 +106,7 @@ def Sorting(BINS,Diversity,N,BIAS_LIBRARY,distribution,Part_conv,A,B):
     
 def Sequencing(BINS,Diversity,BUDGET_READS,Ratio_amplification,Nij):
 # take as input the number of bins (BINS), the diversity (Diversity) and size of the library sorted (N), the number of reads to allocate in total (BUDGET_READS), the post sorting amplification step (Ratio_amplification),if the library is balanced (BIAS_Library), the underlying protein distribution (gamma or lognormal), the fluorescence bounds for the sorting machine (Part_conv),and the parameters of the said distribution.
-# Return the (Diversity*Bins) matrix resulting from the sequencing
+# Return the (Diversity*Bins) matrix resulting from the sequencing Sij and the sorting matrix Nj (number of cell sorted in each bin)
 
     #### STEP 4 - PCR amplification
 
@@ -127,4 +127,4 @@ def Sequencing(BINS,Diversity,BUDGET_READS,Ratio_amplification,Nij):
         else:
             Concentration_vector=np.zeros(Diversity)
         Sij[:,j]=np.random.multinomial(READS[j],Concentration_vector,size=1)
-    return(Sij)
+    return(Sij,Nj)

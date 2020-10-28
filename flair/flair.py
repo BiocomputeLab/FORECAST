@@ -96,6 +96,6 @@ def inference(p,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_ex
     Data_results=np.array(Data_results)
     df= pd.DataFrame(Data_results)
     df.rename(columns={0: "mu_MLE", 1: "sigma_MLE", 2: "mu_std",3: "sigma_std",4: "mu_MOM", 5: "sigma_MOM", 6: "Inference_grade",7: "Score"}, errors="raise",inplace=True)
-    print(df.head())
+    return(df)
 
 
