@@ -78,7 +78,7 @@ def ML_inference_reparameterised(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,d
             fi = lambda x: neg_ll_rep(x,i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij)
             fdd = nd.Hessian(fi)
             hessian_ndt=fdd([c, d])
-            if np.all(np.linalg.eigvals(hessian_ndt))==True:
+            if np.all(np.linalg.eigvals(hessian_ndt)>0)==True:
                 inv_J=np.linalg.inv(hessian_ndt)
                 e,f=np.sqrt(np.diag(np.matmul(np.matmul(np.diag((np.exp(c),np.exp(d))),inv_J),np.diag((np.exp(c),np.exp(d))))))
                 Dataresults[2]=e
