@@ -71,6 +71,10 @@ def ML_inference_reparameterised(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,d
         if np.count_nonzero(T)==1: #is there only one bin to be considered? then naive inference
             Dataresults[6]=3 #Inference grade 3 : Naive inference
         else:  #in the remaining case, we can deploy the mle framework to improve the mom estimation
+            if distribution=='lognormal':
+                IV=np.log(SP)
+            else:
+                IV=np.log(np.array([(SP[0]**2)/SP[1],SP[1]/SP[0]]))
             res=minimize(neg_ll_rep,np.log(SP),args=(i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij),method="Nelder-Mead")
             c,d=res.x
             Dataresults[0]=np.exp(c) #value of mu, MLE
@@ -80,7 +84,11 @@ def ML_inference_reparameterised(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,d
             hessian_ndt=fdd([c, d])
             if np.all(np.linalg.eigvals(hessian_ndt)>0)==True:
                 inv_J=np.linalg.inv(hessian_ndt)
-                e,f=np.sqrt(np.diag(np.matmul(np.matmul(np.diag((np.exp(c),np.exp(d))),inv_J),np.diag((np.exp(c),np.exp(d))))))
+                if distribution=='lognormal':
+                    jacobian=np.diag((np.exp(c),np.exp(d)))
+                else:
+                    jacobian=np.exp(c+d)*np.array([[1,1],[1,2*np.exp(d)]])
+                e,f=np.sqrt(np.diag(np.matmul(np.matmul(jacobian,inv_J),jacobian.T)))
                 Dataresults[2]=e
                 Dataresults[3]=f
                 Dataresults[6]=1 #Inference grade 1 : ML inference  successful
