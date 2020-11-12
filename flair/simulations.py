@@ -23,7 +23,7 @@ def Sorting_and_Sequencing(BINS,Diversity,N,BUDGET_READS,Ratio_amplification,BIA
             element_matrix=stats.norm.cdf(Part_conv[j+1],loc=A[i], scale=B[i])-stats.norm.cdf(Part_conv[j],loc=A[i], scale=B[i])
         else:
             element_matrix=stats.gamma.cdf(Part_conv[j+1],a=A[i], scale=B[i])-stats.gamma.cdf(Part_conv[j],a=A[i], scale=B[i])
-        return(stats.norm.cdf(Part_conv[j+1],loc=A[i], scale=B[i])-stats.norm.cdf(Part_conv[j],loc=A[i], scale=B[i]))
+        return(element_matrix)
 
     if BIAS_LIBRARY==True:
        params=np.ones(Diversity)
@@ -38,13 +38,12 @@ def Sorting_and_Sequencing(BINS,Diversity,N,BUDGET_READS,Ratio_amplification,BIA
     #### STEP 2 - Draw the sample sizes= of each genetic construct
 
     Ni=np.random.multinomial(N, p_concentration, size=1)[0]
-    #Ni=Ni[0]
 
     #### STEP 3 - Compute binning
 
     ## Compute ratios qji
     Qij=np.fromfunction(sorting_protein_matrix_populate, (Diversity, BINS), dtype=int)
-    #Qij=np.fromfunction(lambda i, j: i + j, (Diversity, BINS), dtype=int)
+
     ## Compute Nij
     Nij=Qij* Ni[:, np.newaxis]
     Nij=np.floor(Nij) #Convert to Integer numbers
@@ -80,7 +79,11 @@ def Sorting(BINS,Diversity,N,BIAS_LIBRARY,distribution,Part_conv,A,B):
     #### STEP 1 - Draw the ratio p_concentration
     
     def sorting_protein_matrix_populate(i,j):
-        return(stats.norm.cdf(Part_conv[j+1],loc=A[i], scale=B[i])-stats.norm.cdf(Part_conv[j],loc=A[i], scale=B[i]))
+        if distribution=='lognormal':
+            element_matrix=stats.norm.cdf(Part_conv[j+1],loc=A[i], scale=B[i])-stats.norm.cdf(Part_conv[j],loc=A[i], scale=B[i])
+        else:
+            element_matrix=stats.gamma.cdf(Part_conv[j+1],a=A[i], scale=B[i])-stats.gamma.cdf(Part_conv[j],a=A[i], scale=B[i])
+        return(element_matrix)
 
     if BIAS_LIBRARY==True:
        params=np.ones(Diversity)

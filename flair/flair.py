@@ -29,7 +29,7 @@ def starting_point(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Me
     else:
         mu=np.mean(T)
         std=np.std(T,ddof=1)
-    return (np.array([mu,std]))
+    return (np.array([mu,std**2]))
 
 
 def neg_ll_rep(theta,i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij):
@@ -57,6 +57,36 @@ def neg_ll_rep(theta,i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij):
     return(NL)
 
 
+def neg_ll(theta,i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij):
+#takes as input the parameter theta=(alpha,beta), the construct number i
+#Returns the likelihood
+    alpha=theta[0]
+    beta=theta[1]
+    NL=0
+    for j in range(BINS):
+    #Compute intensity parameter
+        if Nj[j]==0:
+            intensity=0
+        else :
+            if distribution=='lognormal':
+                probability_bin=stats.norm.cdf(Part_conv[j+1],loc=theta[0],scale=theta[1])-stats.norm.cdf(Part_conv[j],loc=theta[0],scale=theta[1])
+            else:
+                probability_bin=stats.gamma.cdf(Part_conv[j+1],a=theta[0],scale=theta[1])-stats.gamma.cdf(Part_conv[j],a=theta[0],scale=theta[1])
+            intensity=Nihat[i]*probability_bin*READS[j]/Nj[j]
+    #Compute Likelihood
+        if Sij[i,j]!=0:
+            if intensity>0: #Avoid float error with np.log
+                NL+=intensity-Sij[i,j]*np.log(intensity)
+        else:
+            NL+=intensity
+    return(NL)
+
+
+
+
+
+
+
 def ML_inference_reparameterised(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_expression_bins,Part_conv,Sij):
 #Takes as input the construct number i
 #Returns a numpy array containing the FLAIR inference,confidence intervals, MOM inference, scoring and validity of ML inference
@@ -67,18 +97,22 @@ def ML_inference_reparameterised(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,d
         SP=starting_point(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_expression_bins,Part_conv)
         #The four next lines provide the MOM estimates on a,b, mu and sigma
         Dataresults[4]=SP[0] #value of mu MOM
-        Dataresults[5]=SP[1] #Value of sigma MOM
+        Dataresults[5]=np.sqrt(SP[1]) #Value of sigma MOM
         if np.count_nonzero(T)==1: #is there only one bin to be considered? then naive inference
             Dataresults[6]=3 #Inference grade 3 : Naive inference
         else:  #in the remaining case, we can deploy the mle framework to improve the mom estimation
             if distribution=='lognormal':
-                IV=np.log(SP)
+                IV=np.log(np.array([SP[0],np.sqrt(SP[1])]))  #initial value for log(mu,sigma)
             else:
-                IV=np.log(np.array([(SP[0]**2)/SP[1],(SP[1]**2)/SP[0]]))
-            res=minimize(neg_ll_rep,np.log(SP),args=(i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij),method="Nelder-Mead")
+                IV=np.log(np.array([(SP[0]**2)/SP[1],(SP[1])/SP[0]]))  #initial value for log(a,b)
+            res=minimize(neg_ll_rep,IV,args=(i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij),method="Nelder-Mead")
             c,d=res.x
-            Dataresults[0]=np.exp(c) #value of mu, MLE
-            Dataresults[1]=np.exp(d) #value of sigma squared, MLE
+            if distribution=='lognormal':
+                Dataresults[0]=np.exp(c) #value of mu, MLE
+                Dataresults[1]=np.exp(d) #value of sigma , MLE
+            else:
+                Dataresults[0]=np.exp(c+d) #value of mu, MLE
+                Dataresults[1]=np.exp(c/2+d) #value of sigma , MLE
             fi = lambda x: neg_ll_rep(x,i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij)
             fdd = nd.Hessian(fi)
             hessian_ndt=fdd([c, d])
@@ -87,8 +121,10 @@ def ML_inference_reparameterised(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,d
                 if distribution=='lognormal':
                     jacobian=np.diag((np.exp(c),np.exp(d)))
                 else:
-                    jacobian=np.exp(c+d)*np.array([[1,1],[np.exp(-d/2),np.exp(-d/2)/2]])
-                e,f=np.sqrt(np.diag(np.matmul(np.matmul(jacobian,inv_J),jacobian.T)))
+                    a=np.exp(c)
+                    b=np.exp(d)
+                    jacobian=np.array([[b,a],[b/(2*np.sqrt(a)),np.sqrt(a)]])
+                e,f=np.sqrt(np.diag(np.matmul(np.matmul(jacobian.T,inv_J),jacobian)))
                 Dataresults[2]=e
                 Dataresults[3]=f
                 Dataresults[6]=1 #Inference grade 1 : ML inference  successful
