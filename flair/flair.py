@@ -46,7 +46,7 @@ def neg_ll_rep(theta,i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij):
             if distribution=='lognormal':
                 probability_bin=stats.norm.cdf(Part_conv[j+1],loc=np.exp(alpha),scale=np.exp(beta))-stats.norm.cdf(Part_conv[j],loc=np.exp(alpha),scale=np.exp(beta))
             else:
-                probability_bin=stats.gamma.cdf(Part_conv[j+1],loc=np.exp(alpha),scale=np.exp(beta))-stats.gamma.cdf(Part_conv[j],loc=np.exp(alpha),scale=np.exp(beta))
+                probability_bin=stats.gamma.cdf(Part_conv[j+1],a=np.exp(alpha),scale=np.exp(beta))-stats.gamma.cdf(Part_conv[j],a=np.exp(alpha),scale=np.exp(beta))
             intensity=Nihat[i]*probability_bin*READS[j]/Nj[j]
     #Compute Likelihood
         if Sij[i,j]!=0:
