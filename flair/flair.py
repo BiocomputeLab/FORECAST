@@ -74,7 +74,7 @@ def ML_inference_reparameterised(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,d
             if distribution=='lognormal':
                 IV=np.log(SP)
             else:
-                IV=np.log(np.array([(SP[0]**2)/SP[1],SP[1]/SP[0]]))
+                IV=np.log(np.array([(SP[0]**2)/SP[1],(SP[1]**2)/SP[0]]))
             res=minimize(neg_ll_rep,np.log(SP),args=(i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij),method="Nelder-Mead")
             c,d=res.x
             Dataresults[0]=np.exp(c) #value of mu, MLE
@@ -87,7 +87,7 @@ def ML_inference_reparameterised(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,d
                 if distribution=='lognormal':
                     jacobian=np.diag((np.exp(c),np.exp(d)))
                 else:
-                    jacobian=np.exp(c+d)*np.array([[1,1],[1,2*np.exp(d)]])
+                    jacobian=np.exp(c+d)*np.array([[1,1],[np.exp(-d/2),np.exp(-d/2)/2]])
                 e,f=np.sqrt(np.diag(np.matmul(np.matmul(jacobian,inv_J),jacobian.T)))
                 Dataresults[2]=e
                 Dataresults[3]=f

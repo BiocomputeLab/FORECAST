@@ -19,7 +19,7 @@ def Sorting_and_Sequencing(BINS,Diversity,N,BUDGET_READS,Ratio_amplification,BIA
     #### STEP 1 - Draw the ratio p_concentration
     
     def sorting_protein_matrix_populate(i,j):
-        if distribution='lognormal':
+        if distribution=='lognormal':
             element_matrix=stats.norm.cdf(Part_conv[j+1],loc=A[i], scale=B[i])-stats.norm.cdf(Part_conv[j],loc=A[i], scale=B[i])
         else:
             element_matrix=stats.gamma.cdf(Part_conv[j+1],a=A[i], scale=B[i])-stats.gamma.cdf(Part_conv[j],a=A[i], scale=B[i])
