@@ -56,37 +56,6 @@ def neg_ll_rep(theta,i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij):
             NL+=intensity
     return(NL)
 
-
-def neg_ll(theta,i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij):
-#takes as input the parameter theta=(alpha,beta), the construct number i
-#Returns the likelihood
-    alpha=theta[0]
-    beta=theta[1]
-    NL=0
-    for j in range(BINS):
-    #Compute intensity parameter
-        if Nj[j]==0:
-            intensity=0
-        else :
-            if distribution=='lognormal':
-                probability_bin=stats.norm.cdf(Part_conv[j+1],loc=theta[0],scale=theta[1])-stats.norm.cdf(Part_conv[j],loc=theta[0],scale=theta[1])
-            else:
-                probability_bin=stats.gamma.cdf(Part_conv[j+1],a=theta[0],scale=theta[1])-stats.gamma.cdf(Part_conv[j],a=theta[0],scale=theta[1])
-            intensity=Nihat[i]*probability_bin*READS[j]/Nj[j]
-    #Compute Likelihood
-        if Sij[i,j]!=0:
-            if intensity>0: #Avoid float error with np.log
-                NL+=intensity-Sij[i,j]*np.log(intensity)
-        else:
-            NL+=intensity
-    return(NL)
-
-
-
-
-
-
-
 def ML_inference_reparameterised(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_expression_bins,Part_conv,Sij):
 #Takes as input the construct number i
 #Returns a numpy array containing the FLAIR inference,confidence intervals, MOM inference, scoring and validity of ML inference
