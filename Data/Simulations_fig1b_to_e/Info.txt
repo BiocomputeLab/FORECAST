@@ -1,0 +1,6 @@
+Data used to create figure 1b,1c,1d,1e
+
+MAPE.csv contains the average value of the MAPE for each simulation. the first columns indicates the estimate (Mean or standard deviation , the standard deviation is noted VAR)the inference method (MLE or MOM), the number of bins (8 or 16)
+The second column is the 19*19 matrix of the corresponding MAPE value when varying the normalised number of cells (rows) and normalised total number of reads (columns) in range :[5,10,15,20,25,35,50,75,100,150,200,250,500,750, 1e3,5e3,1e4,1e5] 
+
+STDMAPE.csv follows the same format, and contains the standard deviation of the MAPE during the three replicates to account for sampling variation.
