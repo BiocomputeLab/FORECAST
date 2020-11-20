@@ -14,16 +14,39 @@ from joblib import Parallel, delayed
 ##############################################################################################################
 ###########################################  Functions   #####################################################
 
+class Experiment():
+    def __init__(self,bins,diversity,size,reads,nj,sequencing,fmax,distribution):
+        self.bins=bins
+        self.diversity=diversity
+        self.size=size
+        self.reads=reads
+        self.nj=nj
+        self.sequencing
+        self.fmax=fmax
+        self.distribution=distribution
+        if distribution=='lognormal':
+            # Working in log-space 
+            self.partitioning=np.log(np.logspace(0,np.log10(fmax),bins+1))
+        else:
+            partitioning=np.logspace(0,np.log10(fmax),bins+1)
+            partitioning[0]=0
+            self.partitioning=partitioning
+        self.mean_assigned=np.array([(partitioning[j+1]+partitioning[j])/2 for j in range(bins)])
+        self.enrich=np.divide(nj, reads, out=np.zeros_like(nj), where=reads!=0)
+        self.nijhat=np.around(np.multiply(self.sequencing,self.enrich)).astype(int)
+        self.nihat=self.nijhat.sum(axis=1)
 
-def starting_point(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_expression_bins,Part_conv):
+
+
+def starting_point(i,Experiment):
 #Takes as input the construct number i
 #Returns the empirical mean and standard deviation
-    T=np.ceil(Nijhat[i,:]).astype(int)
-    T=np.repeat(Mean_expression_bins,T)
+    T=np.ceil(Experiment.nijhat[i,:]).astype(int)
+    T=np.repeat(Experiment.mean_assigned,T)
     if np.max(T) == np.min(T):  #What if all the cells fall into one unique bin?
-        j=np.where(Mean_expression_bins==np.max(T))[0][0]
+        j=np.where(Experiment.mean_assigned==np.max(T))[0][0]
         mu=np.max(T)
-        std=(Part_conv[j+1]-Part_conv[j])/4
+        std=(Experiment.partitioning[j+1]-Experiment.partitioning[j])/4
     elif not np.any(T):
         return(np.array([0,0]))
     else:
@@ -32,62 +55,62 @@ def starting_point(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Me
     return (np.array([mu,std**2]))
 
 
-def neg_ll_rep(theta,i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij):
+def neg_ll_rep(theta,i,Experiment):
 #takes as input the parameter theta=(alpha,beta), the construct number i
 #Returns the likelihood
     alpha=theta[0]
     beta=theta[1]
     NL=0
-    for j in range(BINS):
+    for j in range(Experiment.bins):
     #Compute intensity parameter
-        if Nj[j]==0:
+        if Experiment.nj[j]==0:
             intensity=0
         else :
-            if distribution=='lognormal':
-                probability_bin=stats.norm.cdf(Part_conv[j+1],loc=np.exp(alpha),scale=np.exp(beta))-stats.norm.cdf(Part_conv[j],loc=np.exp(alpha),scale=np.exp(beta))
+            if Experiment.distribution=='lognormal':
+                probability_bin=stats.norm.cdf(Experiment.partitioning[j+1],loc=np.exp(alpha),scale=np.exp(beta))-stats.norm.cdf(Experiment.partitioning[j],loc=np.exp(alpha),scale=np.exp(beta))
             else:
-                probability_bin=stats.gamma.cdf(Part_conv[j+1],a=np.exp(alpha),scale=np.exp(beta))-stats.gamma.cdf(Part_conv[j],a=np.exp(alpha),scale=np.exp(beta))
-            intensity=Nihat[i]*probability_bin*READS[j]/Nj[j]
+                probability_bin=stats.gamma.cdf(Experiment.partitioning[j+1],a=np.exp(alpha),scale=np.exp(beta))-stats.gamma.cdf(Experiment.partitioning[j],a=np.exp(alpha),scale=np.exp(beta))
+            intensity=Experiment.nihat[i]*probability_bin*Experiment.sequencing[j]/Experiment.nj[j]
     #Compute Likelihood
-        if Sij[i,j]!=0:
+        if Experiment.sequencing[i,j]!=0:
             if intensity>0: #Avoid float error with np.log
-                NL+=intensity-Sij[i,j]*np.log(intensity)
+                NL+=intensity-Experiment.sequencing[i,j]*np.log(intensity)
         else:
             NL+=intensity
     return(NL)
 
-def ML_inference_reparameterised(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_expression_bins,Part_conv,Sij):
+def ML_inference_reparameterised(i,Experiment):
 #Takes as input the construct number i
 #Returns a numpy array containing the FLAIR inference,confidence intervals, MOM inference, scoring and validity of ML inference
     Dataresults=np.zeros(8)
-    T=Nijhat[i,:]
+    T=Experiment.nijhat[i,:]
     if np.sum(T)!=0:     #Can we do inference? has the genetic construct been sequenced?
         Dataresults[7]=(T[0]+T[-1])/np.sum(T) #Scoring of the data- How lopsided is the read count? all on the left-right border?
-        SP=starting_point(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_expression_bins,Part_conv)
+        SP=starting_point(i,Experiment)
         #The four next lines provide the MOM estimates on a,b, mu and sigma
         Dataresults[4]=SP[0] #value of mu MOM
         Dataresults[5]=np.sqrt(SP[1]) #Value of sigma MOM
         if np.count_nonzero(T)==1: #is there only one bin to be considered? then naive inference
             Dataresults[6]=3 #Inference grade 3 : Naive inference
         else:  #in the remaining case, we can deploy the mle framework to improve the mom estimation
-            if distribution=='lognormal':
+            if Experiment.distribution=='lognormal':
                 IV=np.log(np.array([SP[0],np.sqrt(SP[1])]))  #initial value for log(mu,sigma)
             else:
                 IV=np.log(np.array([(SP[0]**2)/SP[1],(SP[1])/SP[0]]))  #initial value for log(a,b)
-            res=minimize(neg_ll_rep,IV,args=(i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij),method="Nelder-Mead")
+            res=minimize(neg_ll_rep,IV,args=(i,Experiment),method="Nelder-Mead")
             c,d=res.x
-            if distribution=='lognormal':
+            if Experiment.distribution=='lognormal':
                 Dataresults[0]=np.exp(c) #value of mu, MLE
                 Dataresults[1]=np.exp(d) #value of sigma , MLE
             else:
                 Dataresults[0]=np.exp(c+d) #value of mu, MLE
                 Dataresults[1]=np.exp(c/2+d) #value of sigma , MLE
-            fi = lambda x: neg_ll_rep(x,i,BINS,Part_conv,READS,Nj,Nihat,distribution,Sij)
+            fi = lambda x: neg_ll_rep(x,i,Experiment)
             fdd = nd.Hessian(fi)
             hessian_ndt=fdd([c, d])
             if np.all(np.linalg.eigvals(hessian_ndt)>0)==True:
                 inv_J=np.linalg.inv(hessian_ndt)
-                if distribution=='lognormal':
+                if Experiment.distribution=='lognormal':
                     jacobian=np.diag((np.exp(c),np.exp(d)))
                 else:
                     a=np.exp(c)
@@ -104,8 +127,8 @@ def ML_inference_reparameterised(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,d
     return(Dataresults)
 
 
-def inference(p,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_expression_bins,Part_conv,Sij):
-    Data_results = Parallel(n_jobs=-1,max_nbytes=None)(delayed(ML_inference_reparameterised)(i,FLUORESCENCE_MAX,BINS,Nj,READS,Nijhat,Nihat,distribution,Mean_expression_bins,Part_conv,Sij)for i in range(p))
+def inference(p,Experiment):
+    Data_results = Parallel(n_jobs=-1,max_nbytes=None)(delayed(ML_inference_reparameterised)(i,Experiment)for i in range(p))
     Data_results=np.array(Data_results)
     df= pd.DataFrame(Data_results)
     df.rename(columns={0: "mu_MLE", 1: "sigma_MLE", 2: "mu_std",3: "sigma_std",4: "mu_MOM", 5: "sigma_MOM", 6: "Inference_grade",7: "Score"}, errors="raise",inplace=True)
