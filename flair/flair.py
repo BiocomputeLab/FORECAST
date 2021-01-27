@@ -1,46 +1,19 @@
 import numpy as np
 import pandas as pd
 #import random
-import matplotlib.pyplot as plt
-import seaborn as sns
 import scipy as sc
 import scipy.stats as stats
 from scipy.special import factorial,digamma
 import numdifftools as nd
 from scipy.optimize import minimize
 from joblib import Parallel, delayed
-
-
 ##############################################################################################################
 ###########################################  Functions   #####################################################
 
-class Experiment():
-    def __init__(self,bins,diversity,size,reads,nj,sequencing,fmax,distribution):
-        self.bins=bins
-        self.diversity=diversity
-        self.size=size
-        self.reads=reads
-        self.nj=nj
-        self.sequencing
-        self.fmax=fmax
-        self.distribution=distribution
-        if distribution=='lognormal':
-            # Working in log-space 
-            self.partitioning=np.log(np.logspace(0,np.log10(fmax),bins+1))
-        else:
-            partitioning=np.logspace(0,np.log10(fmax),bins+1)
-            partitioning[0]=0
-            self.partitioning=partitioning
-        self.mean_assigned=np.array([(partitioning[j+1]+partitioning[j])/2 for j in range(bins)])
-        self.enrich=np.divide(nj, reads, out=np.zeros_like(nj), where=reads!=0)
-        self.nijhat=np.around(np.multiply(self.sequencing,self.enrich)).astype(int)
-        self.nihat=self.nijhat.sum(axis=1)
-
-
 
 def starting_point(i,Experiment):
-#Takes as input the construct number i
-#Returns the empirical mean and standard deviation
+    #Takes as input the construct number i
+    #Returns the empirical mean and standard deviation
     T=np.ceil(Experiment.nijhat[i,:]).astype(int)
     T=np.repeat(Experiment.mean_assigned,T)
     if np.max(T) == np.min(T):  #What if all the cells fall into one unique bin?
@@ -56,32 +29,32 @@ def starting_point(i,Experiment):
 
 
 def neg_ll_rep(theta,i,Experiment):
-#takes as input the parameter theta=(alpha,beta), the construct number i
-#Returns the likelihood
+    #takes as input the parameter theta=(alpha,beta), the construct number i
+    #Returns the likelihood
     alpha=theta[0]
     beta=theta[1]
     NL=0
     for j in range(Experiment.bins):
-    #Compute intensity parameter
         if Experiment.nj[j]==0:
-            intensity=0
+            pass
         else :
+            #Compute intensity parameter
             if Experiment.distribution=='lognormal':
                 probability_bin=stats.norm.cdf(Experiment.partitioning[j+1],loc=np.exp(alpha),scale=np.exp(beta))-stats.norm.cdf(Experiment.partitioning[j],loc=np.exp(alpha),scale=np.exp(beta))
             else:
                 probability_bin=stats.gamma.cdf(Experiment.partitioning[j+1],a=np.exp(alpha),scale=np.exp(beta))-stats.gamma.cdf(Experiment.partitioning[j],a=np.exp(alpha),scale=np.exp(beta))
-            intensity=Experiment.nihat[i]*probability_bin*Experiment.sequencing[j]/Experiment.nj[j]
-    #Compute Likelihood
-        if Experiment.sequencing[i,j]!=0:
-            if intensity>0: #Avoid float error with np.log
-                NL+=intensity-Experiment.sequencing[i,j]*np.log(intensity)
-        else:
-            NL+=intensity
+            intensity=Experiment.nihat[i]*probability_bin*Experiment.reads[j]/Experiment.nj[j]          
+            #Compute Likelihood
+            if Experiment.sequencing[i,j]!=0:
+                if intensity>0: #Avoid float error with np.log
+                    NL+=intensity-Experiment.sequencing[i,j]*np.log(intensity)
+            else:
+                NL+=intensity
     return(NL)
 
 def ML_inference_reparameterised(i,Experiment):
-#Takes as input the construct number i
-#Returns a numpy array containing the FLAIR inference,confidence intervals, MOM inference, scoring and validity of ML inference
+    #Takes as input the construct number i
+    #Returns a numpy array containing the FLAIR inference,confidence intervals, MOM inference, scoring and validity of ML inference
     Dataresults=np.zeros(8)
     T=Experiment.nijhat[i,:]
     if np.sum(T)!=0:     #Can we do inference? has the genetic construct been sequenced?
@@ -96,7 +69,7 @@ def ML_inference_reparameterised(i,Experiment):
             if Experiment.distribution=='lognormal':
                 IV=np.log(np.array([SP[0],np.sqrt(SP[1])]))  #initial value for log(mu,sigma)
             else:
-                IV=np.log(np.array([(SP[0]**2)/SP[1],(SP[1])/SP[0]]))  #initial value for log(a,b)
+                IV=np.log(np.array([(SP[0]**2)/SP[1],(SP[1])/SP[0]]))  #initial value for log(a,b) 
             res=minimize(neg_ll_rep,IV,args=(i,Experiment),method="Nelder-Mead")
             c,d=res.x
             if Experiment.distribution=='lognormal':

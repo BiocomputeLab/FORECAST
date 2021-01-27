@@ -1,14 +1,14 @@
 from distutils.core import setup
 setup(
-  name = 'dnaplotlib',
-  packages = ['dnaplotlib','dnaplotlib.sbol'],
+  name = 'flair',
+  packages = setuptools.find_packages(),
   version = '1.0',
   description = 'Genetic design visualization',
-  author = 'Thomas Gorochowski, ',
-  author_email = 'tom@chofski.co.uk',
-  url = 'https://github.com/VoigtLab/dnaplotlib',
+  author = 'Pierre-Aurelien Gilliot',
+  author_email = 'pa.gilliot@orange.fr',
+  url = 'https://github.com/BiocomputeLab/FLAIR',
   download_url = 'https://github.com/VoigtLab/dnaplotlib/archive/1.0.tar.gz',
-  keywords = ['visualization', 'SBOLv', 'genetic design', 'synthetic biology', 'systems biology'],
+  keywords = ['MPRA','simulation','inference','Flow-Seq'],
   classifiers = [],
   scripts=['apps/quick.py', 'apps/library_plot.py']
 )

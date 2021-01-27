@@ -1,41 +1,16 @@
+
 import numpy as np
 import pandas as pd
-import random
-import matplotlib.pyplot as plt
-import seaborn as sns
+#import random
 import scipy as sc
 import scipy.stats as stats
-from scipy.special import gamma, factorial,digamma
+from scipy.special import factorial,digamma
 import numdifftools as nd
 from scipy.optimize import minimize
 from joblib import Parallel, delayed
 
-
-
-class Simulation():
-    def __init__(self,bins,diversity,size,reads,fmax,distribution,ratio_amplification,theta1,theta2,bias_library):
-        self.bins=bins
-        self.diversity=diversity
-        self.size=size
-        self.reads=reads #number of reads in total for your simulation
-        self.fmax=fmax
-        self.distribution=distribution
-        if distribution=='lognormal':
-            # Working in log-space 
-            self.partitioning=np.log(np.logspace(0,np.log10(self.fmax),bins+1))
-        else:
-            partitioning=np.logspace(0,np.log10(self.fmax),bins+1)
-            partitioning[0]=0
-            self.partitioning=partitioning
-        self.ratio_amplification=ratio_amplification #post sorting PCR: What is the PCR amplification ratio?
-        self.theta1=theta1 #first parameter of the distribution (mu for a normal distirbution or shape for a gamma distribution)
-        self.theta2=theta2 #second parameter of the distribution (sigma for a normal distribution or scale for a gamma distribution)
-        self.bias_library=bias_library
-
-
-
-
-
+##############################################################################################################
+###########################################  Functions   #####################################################
 
 
 def Sorting_and_Sequencing(Simulation):
@@ -98,8 +73,8 @@ def Sorting_and_Sequencing(Simulation):
 
 
 def Sorting(Simulation):
-# take as input the number of bins (Simulation.bins), the diversity (Simulation.diversity) and size of the library sorted (N), the post sorting amplification step (Simulation.ratio_amplification),if the library is balanced (BIAS_Library), the underlying protein Simulation.distribution (gamma or lognormal), the fluorescence bounds for the sorting machine (Simulation.partitioning),and the parameters of the said Simulation.distribution.
-# Return the (Simulation.diversity*Bins) matrix resulting from the sorting step
+    # take as input the number of bins (Simulation.bins), the diversity (Simulation.diversity) and size of the library sorted (N), the post sorting amplification step (Simulation.ratio_amplification),if the library is balanced (BIAS_Library), the underlying protein Simulation.distribution (gamma or lognormal), the fluorescence bounds for the sorting machine (Simulation.partitioning),and the parameters of the said Simulation.distribution.
+    # Return the (Simulation.diversity*Bins) matrix resulting from the sorting step
 
     global Sij
     #### STEP 1 - Draw the ratio p_concentration
@@ -138,8 +113,8 @@ def Sorting(Simulation):
     
     
 def Sequencing(Simulation,Nij):
-# take as input the number of bins (Simulation.bins), the diversity (Simulation.diversity) and size of the library sorted (N), the number of reads to allocate in total (Simulation.reads), the post sorting amplification step (Simulation.ratio_amplification),if the library is balanced (BIAS_Library), the underlying protein Simulation.distribution (gamma or lognormal), the fluorescence bounds for the sorting machine (Simulation.partitioning),and the parameters of the said Simulation.distribution.
-# Return the (Simulation.diversity*Bins) matrix resulting from the sequencing Sij and the sorting matrix Nj (number of cell sorted in each bin)
+    # take as input the number of bins (Simulation.bins), the diversity (Simulation.diversity) and size of the library sorted (N), the number of reads to allocate in total (Simulation.reads), the post sorting amplification step (Simulation.ratio_amplification),if the library is balanced (BIAS_Library), the underlying protein Simulation.distribution (gamma or lognormal), the fluorescence bounds for the sorting machine (Simulation.partitioning),and the parameters of the said Simulation.distribution.
+    # Return the (Simulation.diversity*Bins) matrix resulting from the sequencing Sij and the sorting matrix Nj (number of cell sorted in each bin)
 
     #### STEP 4 - PCR amplification
 
