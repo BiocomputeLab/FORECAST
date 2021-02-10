@@ -17,7 +17,6 @@ def Sorting_and_Sequencing(Simulation):
     # take as input the number of bins (Simulation.bins), the diversity (Simulation.diversity) and size of the library sorted (N), the number of reads to allocate in total (Simulation.reads), the post sorting amplification step (Simulation.ratio_amplification),if the library is balanced (BIAS_Library), the underlying protein Simulation.distribution (gamma or lognormal), the fluorescence bounds for the sorting machine (Simulation.partitioning),and the parameters of the said Simulation.distribution.
     # Return the (Simulation.diversity*Bins) matrix resulting from the sequencing and the sorting matrix Nj (number of cell sorted in each bin)
     global Sij
-    #### STEP 1 - Draw the ratio p_concentration
     
     def sorting_protein_matrix_populate(i,j):
         if Simulation.distribution=='lognormal':
@@ -26,11 +25,13 @@ def Sorting_and_Sequencing(Simulation):
             element_matrix=stats.gamma.cdf(Simulation.partitioning[j+1],a=Simulation.theta1[i], scale=Simulation.theta2[i])-stats.gamma.cdf(Simulation.partitioning[j],a=Simulation.theta1[i], scale=Simulation.theta2[i])
         return(element_matrix)
 
+    #### STEP 1 - Draw the ratio p_concentration
+
     if Simulation.bias_library==True:
        params=np.ones(Simulation.diversity)
        Dir=[random.gammavariate(a,1) for a in params]
        Dir=[v/sum(Dir) for v in Dir]
-       # Sample from the 30,000 simplex to get ratios
+       # Sample from the Simulation.diversity simplex to get ratios
        #p_concentration=np.ones(Simulation.diversity)/Simulation.diversity
        p_concentration=Dir
     else:
@@ -86,7 +87,7 @@ def Sorting(Simulation):
             element_matrix=stats.gamma.cdf(Simulation.partitioning[j+1],a=Simulation.theta1[i], scale=Simulation.theta2[i])-stats.gamma.cdf(Simulation.partitioning[j],a=Simulation.theta1[i], scale=Simulation.theta2[i])
         return(element_matrix)
 
-    if Simualtion.bias_library==True:
+    if Simulation.bias_library==True:
        params=np.ones(Simulation.diversity)
        Dir=[random.gammavariate(a,1) for a in params]
        Dir=[v/sum(Dir) for v in Dir]
