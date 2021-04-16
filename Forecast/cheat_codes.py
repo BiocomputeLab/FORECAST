@@ -26,3 +26,7 @@ def  Visibility(m,s,Fm):
 def ab_to_ms(a,b):
     #Takes as input the a,b parameters of a gamma distribution and return the mean and standard deviation.
     return np.array([a*b,np.sqrt(a)*b])
+
+def ms_to_ab(m,s):
+    #takes as input the mean and standard deviation of the gamma dsitribution and return shape and scale parameters
+    return np.array([(m/s)**2,s**2/m])
